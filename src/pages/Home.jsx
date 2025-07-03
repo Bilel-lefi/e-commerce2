@@ -119,24 +119,10 @@ export default function Home() {
           </div>
 
           <div className="shadow-sm border-2 p-4 rounded-lg bg-white">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="text-yellow-500 text-lg">★★★★★</div>
-              <div className="flex gap-1 overflow-visible">
-                {[
-                  "https://images.unsplash.com/photo-1607746882042-944635dfe10e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-                  "https://images.unsplash.com/photo-1603415526960-f8f0b1cdd7d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-                  "https://images.unsplash.com/photo-1613654568348-6f06fa7dc7b0?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-                  "https://images.unsplash.com/photo-1573496130141-209d200cebd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-                ].map((url, i) => (
-                  <img
-                    key={i}
-                    src={url}
-                    alt={`Client ${i + 1}`}
-                    className="w-8 h-8 rounded-full border-2 border-white object-cover"
-                  />
-                ))}
-              </div>
+            <div className="gap-3 px-6 py-3">
+              <div className="text-yellow-500 text-2xl">★★★★★</div>
             </div>
+
             <h1 className="text-3xl font-bold mb-5">
               العشوائي labubu دمية - blind box - مفاجأة داخل كل كيس !!
             </h1>
