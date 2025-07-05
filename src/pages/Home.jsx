@@ -109,14 +109,14 @@ export default function Home() {
                 className="rounded-xl shadow-xl w-full h-[400px] object-cover mb-4"
               />
             )}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 md:gap-2 gap-2">
               {product?.imageUrl?.map((img, i) => (
                 <img
                   key={i}
                   src={img}
                   alt={`Thumb ${i + 1}`}
                   onClick={() => setMainImage(img)}
-                  className="w-[60px] h-[60px] object-cover rounded cursor-pointer hover:scale-110 transition border-2 border-transparent hover:border-red-700"
+                  className="w-[80px] h-[80px] md:w-[90px]  md:h-[90px] object-cover rounded cursor-pointer hover:scale-110 transition border-2 border-transparent hover:border-red-700"
                 />
               ))}
             </div>
