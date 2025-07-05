@@ -1,16 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { Hand, MapPin, Shield, Crown, Package } from "lucide-react";
-import labubuImage from "../assets/labubu.png";
+
 export default function Home() {
+  const [product, setProduct] = useState(null);
+  const [mainImage, setMainImage] = useState("");
   const [selectedPrice, setSelectedPrice] = useState("دينار99.00");
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     address: "",
   });
-  const [mainImage, setMainImage] = useState(
-    "https://via.placeholder.com/500x400/FFC0CB/FFFFFF?text=Labubu+Doll"
-  );
+
+  useEffect(() => {
+    axios
+      .get("https://server-salem.onrender.com/api/products")
+      .then((res) => {
+        const firstProduct = res.data[0];
+        setProduct(firstProduct);
+        setMainImage(firstProduct.imageUrl[0]);
+      })
+      .catch((err) => console.error("Erreur de chargement du produit:", err));
+  }, []);
+
   const features = [
     {
       icon: <Hand className="w-6 h-6 text-gray-600" />,
@@ -33,57 +45,47 @@ export default function Home() {
       bgColor: "bg-blue-50",
     },
   ];
-  const thumbnails = Array(7).fill(labubuImage);
 
-  const pricingOptions = [
-    {
-      label: "اشتر 1 - جودة استثنائية في كل تفصيلة",
-      price: "دينار99.00",
-      original: "دينار99.00",
-    },
-    {
-      label: "🔥 اشتر 2 واحصل على تخفيض",
-      price: "دينار193.00",
-      original: "دينار198.00",
-      badge: "العرض الأكثر طلبا",
-    },
-    {
-      label: "🎁 اشتر 3 واستفد من سعر خاص",
-      price: "دينار280.00",
-      original: "دينار297.00",
-    },
-  ];
+  const handlePriceSelect = (price) => setSelectedPrice(price);
 
-  const handleThumbnailClick = (color) => {
-    setMainImage(
-      `https://via.placeholder.com/500x400/${color}/FFFFFF?text=Labubu+Doll`
-    );
-  };
-
-  const handlePriceSelect = (price) => {
-    setSelectedPrice(price);
-  };
-
-  const handleChange = (e) => {
+  const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const allFilled = Object.values(formData).every((v) => v.trim());
-    if (allFilled) {
-      alert(
-        "\u062A\u0645 \u0625\u0631\u0633\u0627\u0644 \u0637\u0644\u0628\u0643 \u0628\u0646\u062C\u0627\u062D! \u0633\u0646\u062A\u0648\u0627\u0635\u0644 \u0645\u0639\u0643 \u0642\u0631\u064A\u0628\u0627ً."
-      );
-    } else {
-      alert(
-        "\u064A\u0631\u062C\u0649 \u0645\u0644\u0621 \u062C\u0645\u064A\u0639 \u0627\u0644\u062D\u0642\u0648\u0644 \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629."
-      );
+    if (!allFilled || !product) {
+      alert("يرجى ملء جميع الحقول المطلوبة.");
+      return;
+    }
+
+    const order = {
+      name: formData.name,
+      phone: formData.phone,
+      address: formData.address,
+      product: product._id,
+      selectedPrice: selectedPrice,
+      quanity:
+        selectedPrice === `${product.price} دينار`
+          ? 1
+          : selectedPrice === `${product.price * 2} دينار`
+          ? 2
+          : 3,
+    };
+
+    try {
+      await axios.post("https://server-salem.onrender.com/api/orders", order);
+      alert("تم إرسال طلبك بنجاح! سنتواصل معك قريباً.");
+      // Optionnel: reset du formulaire
+      setFormData({ name: "", phone: "", address: "" });
+    } catch (error) {
+      console.error("Erreur lors de l'envoi de la commande :", error);
+      alert("حدث خطأ أثناء إرسال الطلب. حاول مرة أخرى.");
     }
   };
 
   return (
     <div dir="rtl" className="bg-[#f8f5f0] text-[#333] font-sans">
-      <div className="bg-gradient-to-r from-red-700 to-red-500 text-white text-center py-2 text-sm relative overflow-hidden">
+      <div className="bg-gradient-to-r from-red-700 to-red-500 text-white text-center py-2 text-sm">
         🔥 الكمية محدودة! لا تضيع الفرصة
       </div>
 
@@ -100,18 +102,20 @@ export default function Home() {
       <main className="max-w-6xl mx-auto p-5">
         <div className="grid md:grid-cols-2 gap-10 mb-10">
           <div>
-            <img
-              src={labubuImage}
-              className="rounded-xl shadow-xl w-full h-[400px] object-cover mb-4"
-              alt="Labubu"
-            />
-            <div className="grid grid-cols-7 gap-2">
-              {thumbnails.map((img, i) => (
+            {mainImage && (
+              <img
+                src={mainImage}
+                alt="Main product"
+                className="rounded-xl shadow-xl w-full h-[400px] object-cover mb-4"
+              />
+            )}
+            <div className="grid grid-cols-3 gap-2">
+              {product?.imageUrl?.map((img, i) => (
                 <img
                   key={i}
                   src={img}
                   alt={`Thumb ${i + 1}`}
-                  onClick={() => handleThumbnailClick(img)}
+                  onClick={() => setMainImage(img)}
                   className="w-[60px] h-[60px] object-cover rounded cursor-pointer hover:scale-110 transition border-2 border-transparent hover:border-red-700"
                 />
               ))}
@@ -123,12 +127,13 @@ export default function Home() {
               <div className="text-yellow-500 text-2xl">★★★★★</div>
             </div>
 
-            <h1 className="text-3xl font-bold mb-5">
-              العشوائي labubu دمية - blind box - مفاجأة داخل كل كيس !!
-            </h1>
-            <div className="text-3xl font-bold text-red-700 mb-5">99 دينار</div>
+            <h1 className="text-3xl font-bold mb-5">{product?.title}</h1>
 
-            <div className="bg-white p-5  border-black border-2 rounded-xl shadow mb-5">
+            <div className="text-3xl font-bold text-red-700 mb-5">
+              {product?.price} دينار
+            </div>
+
+            <div className="bg-white p-5 border-black border-2 rounded-xl shadow mb-5">
               <h3 className="text-lg font-semibold mb-4">
                 👇 للطلب، يرجى إدخال معلوماتك هنا
               </h3>
@@ -138,7 +143,7 @@ export default function Home() {
                 onChange={handleChange}
                 type="text"
                 placeholder="الاسم الكامل"
-                className="mb-3 p-4 border-2 rounded-lg w-full focus:outline-none focus:border-red-700"
+                className="mb-3 p-4 border-2 rounded-lg w-full"
               />
               <input
                 name="phone"
@@ -146,7 +151,7 @@ export default function Home() {
                 onChange={handleChange}
                 type="text"
                 placeholder="رقم الهاتف"
-                className="mb-3 p-4 border-2 rounded-lg w-full focus:outline-none focus:border-red-700"
+                className="mb-3 p-4 border-2 rounded-lg w-full"
               />
               <input
                 name="address"
@@ -154,35 +159,90 @@ export default function Home() {
                 onChange={handleChange}
                 type="text"
                 placeholder="عنوان التوصيل"
-                className="mb-3 p-4 border-2 rounded-lg w-full focus:outline-none focus:border-red-700"
+                className="mb-3 p-4 border-2 rounded-lg w-full"
               />
             </div>
 
             <div className="bg-white p-5 rounded-xl shadow mb-5">
-              {pricingOptions.map((opt, i) => (
-                <div
-                  key={i}
-                  className={`p-4 border-2 rounded-lg mb-3 cursor-pointer transition ${
-                    selectedPrice === opt.price
-                      ? "border-red-700 bg-red-50"
-                      : "border-gray-300 hover:bg-gray-50"
-                  }`}
-                  onClick={() => handlePriceSelect(opt.price)}
-                >
-                  {opt.badge && (
-                    <div className="absolute -mt-10 mr-2 text-xs bg-red-700 text-white py-1 px-3 rounded-full inline-block">
-                      {opt.badge}
-                    </div>
-                  )}
-                  <div className="flex flex-col gap-1">
-                    <div className="text-sm text-gray-600">{opt.label}</div>
-                    <div className="text-red-700 font-bold">{opt.price}</div>
-                    <div className="text-sm line-through text-gray-400">
-                      {opt.original}
-                    </div>
+              {/* 🛒 Offre 1 */}
+              <div
+                className={`p-4 border-2 rounded-lg mb-3 cursor-pointer ${
+                  selectedPrice === `${product?.price} دينار`
+                    ? "border-red-700 bg-red-50"
+                    : "border-gray-300 hover:bg-gray-50"
+                }`}
+                onClick={() => handlePriceSelect(`${product?.price} دينار`)}
+              >
+                <div className="flex flex-col gap-1">
+                  <div className="text-sm text-gray-600">
+                    اشتر 1 - جودة استثنائية في كل تفصيلة
+                  </div>
+                  <div className="text-red-700 font-bold">
+                    {product?.price} دينار
                   </div>
                 </div>
-              ))}
+              </div>
+
+              {/* 🛍️ Offre 2 */}
+              <div
+                className={`p-4 border-2 rounded-lg mb-3 cursor-pointer ${
+                  selectedPrice === `${product?.price * 2} دينار`
+                    ? "border-red-700 bg-red-50"
+                    : "border-gray-300 hover:bg-gray-50"
+                }`}
+                onClick={() => handlePriceSelect(`${product?.price * 2} دينار`)}
+              >
+                <div className="absolute -mt-10 mr-2 text-xs bg-red-700 text-white py-1 px-3 rounded-full inline-block">
+                  العرض الأكثر طلبا
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="text-sm text-gray-600">
+                    🔥 اشتر 2 واحصل على تخفيض
+                  </div>
+                  <div className="text-red-700 font-bold">
+                    {product?.price * 2} دينار
+                  </div>
+                  <div className="text-sm line-through text-gray-400">
+                    {product ? `${product.price * 2 + 10} دينار` : ""}
+                  </div>
+                </div>
+              </div>
+
+              {/* 🎁 Offre 3 - avec remise 30% */}
+              <div
+                className={`p-4 border-2 rounded-lg mb-3 cursor-pointer ${
+                  selectedPrice ===
+                  `${Math.round(
+                    product?.price * 3 - product?.price * 0.3
+                  )} دينار`
+                    ? "border-red-700 bg-red-50"
+                    : "border-gray-300 hover:bg-gray-50"
+                }`}
+                onClick={() =>
+                  handlePriceSelect(
+                    `${Math.round(
+                      product?.price * 3 - product?.price * 0.3
+                    )} دينار`
+                  )
+                }
+              >
+                <div className="absolute -mt-10 mr-2 text-xs bg-green-600 text-white py-1 px-3 rounded-full inline-block">
+                  ✅ خصم 30%{" "}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="text-sm text-gray-600">
+                    🎁 اشتر 3 واستفد من سعر خاص
+                  </div>
+                  <div className="text-red-700 font-bold">
+                    {Math.round(product?.price * 3 - product?.price * 0.3)}{" "}
+                    دينار
+                  </div>
+                  <div className="text-sm line-through text-gray-400">
+                    {product ? `${product.price * 3} دينار` : ""}
+                  </div>
+                  <div className="text-sm text-green-600 font-bold"></div>
+                </div>
+              </div>
             </div>
 
             <div className="bg-yellow-100 p-4 rounded-lg text-center text-xl font-bold text-red-700 mb-4">
@@ -190,65 +250,13 @@ export default function Home() {
             </div>
             <button
               onClick={handleSubmit}
-              className="w-full bg-red-700 hover:bg-red-900 text-white py-4 rounded-lg text-lg font-bold transition shadow animate-zoomPulse"
+              className="w-full bg-red-700 hover:bg-red-900 text-white py-4 rounded-lg text-lg font-bold transition"
               id="order"
             >
               اضغط هنا للطلب
             </button>
 
-            <div className="bg-gray-200 rounded-xl p-6 my-10 text-center space-y-4">
-              <div className="flex justify-center items-center gap-2 text-sm text-gray-700 font-medium">
-                <span>🔔</span>
-                <span>متوفر بكمية محدودة</span>
-              </div>
-
-              <h2 className="text-xl md:text-2xl font-bold text-red-600">
-                🔥 تخفيض لفترة محدودة - PROMO
-              </h2>
-              <h3 className="text-3xl font-bold text-red-600">
-                💯 جودة ممتازة بالضمان
-              </h3>
-
-              <p className="text-lg text-gray-700">✨ استعد للمفاجأة!</p>
-
-              <p className="text-right text-sm md:text-base text-gray-700 leading-relaxed">
-                • دمية لابوبو داخل كيس مغلق -{" "}
-                <span className="font-bold text-black">
-                  لا تعرف أي شخصية ستحصل عليها حتى تفتحها!
-                </span>
-                <br />
-                كل كيس يحتوي على شخصية عشوائية من بين مجموعة مميزة، وبعضها نادر
-                جداً 🎁
-              </p>
-
-              <p className="text-center text-xl font-bold text-red-700 mt-4">
-                لابوبو مش مجرد دمية... إنها قطعة ستايل!
-              </p>
-
-              <ul className="text-right text-sm md:text-base text-gray-800 mt-4 space-y-2">
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600">◆</span> خامة عالية الجودة
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600">◆</span> تجربة فتح ممتعة
-                  ومليئة بالحماس
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-600">◆</span> مثالية للهدايا أو
-                  إضافة
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-yellow-500">⚠️</span> المنتج يُباع
-                  عشوائياً (Blind Box) – لا يمكن اختيار الشخصية.
-                </li>
-              </ul>
-
-              <div className="mt-4 font-bold text-gray-700 uppercase">
-                BEST QUALITY
-              </div>
-            </div>
-            {/* Guarantees Section */}
-            <div className="bg-white rounded-3xl shadow-lg p-8 mb-6">
+            <div className="bg-white rounded-3xl shadow-lg p-8 mt-10 mb-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                 {features.map((feature, index) => (
                   <div
@@ -268,7 +276,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Promotion Banner */}
             <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-3xl border-2 border-dashed border-orange-200 p-6">
               <div className="flex items-center justify-between">
                 <div className="flex-1 text-right">
