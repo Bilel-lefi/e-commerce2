@@ -14,7 +14,7 @@ export default function Home() {
 
   useEffect(() => {
     axios
-      .get("https://server-Pop_mart_tn.onrender.com/api/products")
+      .get("https://server-salem.onrender.com/api/products")
       .then((res) => {
         const firstProduct = res.data[0];
         setProduct(firstProduct);
@@ -73,10 +73,7 @@ export default function Home() {
     };
 
     try {
-      await axios.post(
-        "https://server-Pop_mart_tn.onrender.com/api/orders",
-        order
-      );
+      await axios.post("https://server-salem.onrender.com/api/orders", order);
       alert("تم إرسال طلبك بنجاح! سنتواصل معك قريباً.");
       // Optionnel: reset du formulaire
       setFormData({ name: "", phone: "", address: "" });
